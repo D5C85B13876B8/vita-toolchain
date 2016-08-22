@@ -109,7 +109,6 @@ void list_segments(vita_elf_t *ve)
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#define strtok_r strtok_s
 #elif defined(__linux__) || defined(__CYGWIN__)
 #include <unistd.h>
 #elif defined(__APPLE__)
@@ -183,12 +182,20 @@ vita_imports_t **load_imports(int argc, char *argv[], int *imports_count)
 	get_binary_directory(path, sizeof(path));
 	base_length = strlen(path);
 
+	#if defined(_WIN32) && !defined(__CYGWIN__)
+	s = strtok(default_json, ":");
+	#else
 	s = strtok_r(default_json, ":", &saveptr);
+	#endif
 	while (s) {
 		strncpy(path + base_length, s, sizeof(path) - base_length - 1);
 		if ((imports[loaded++] = vita_imports_load(path, g_log >= DEBUG)) == NULL)
 			goto failure;
+		#if defined(_WIN32) && !defined(__CYGWIN__)
+		s = strtok(NULL, ":");
+		#else
 		s = strtok_r(NULL, ":", &saveptr);
+		#endif
 	}
 
 	// Load imports specified by the user
